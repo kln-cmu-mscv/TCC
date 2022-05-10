@@ -30,6 +30,8 @@ DATASETS = {
     'squats': {'train': 114, 'val': 115},
     'tennis_forehand': {'train': 79, 'val': 74},
     'tennis_serve': {'train': 115, 'val': 68},
+    'arid_drink': {'train': 121, 'val': 30, 'test': 22},
+    'arid_sit': {'train': 82, 'val': 20},
 }
 
 

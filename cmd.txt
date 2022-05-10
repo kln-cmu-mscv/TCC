@@ -1,0 +1,61 @@
+conda create --name tcc python=3.8
+conda install pip; pip install --upgrade pip
+conda install cudnn=8
+
+pip install -r requirements.txt
+
+dataset_preparation/download_pouring_data.sh
+
+wget -P /tmp/ https://github.com/keras-team/keras-applications/releases/download/resnet/resnet50v2_weights_tf_dim_ordering_tf_kernels_notop.h5
+
+python $root_dir/train --alsologtostderr
+CUDA_VISIBLE_DEVICES=1,2 python -m tcc.train --alsologtostderr --force_train
+CUDA_VISIBLE_DEVICES=1,2 python -m tcc.evaluate --alsologtostderr
+CUDA_VISIBLE_DEVICES=1,2 python -m tcc.extract_embeddings --alsologtostderr --dataset pouring  --split val --logdir /tmp/alignment_logs
+CUDA_VISIBLE_DEVICES=1,2 python -m tcc.visualize_alignment --alsologtostderr --video_path /tmp/aligned.mp4 --embs_path /tmp/embeddings.npy
+
+conda create --name tcc2 --clone test2
+export LD_LIBRARY_PATH=/home/srinitca/anaconda3/envs/tcc2/lib:$LD_LIBRARY_PATH
+python extract_embeddings --alsologtostderr --dataset <DATASET> \ --split <SPLIT> --logdir <LOGDIR>
+
+
+## Create TF records for the dark dataset
+VAL=test
+python -m tcc.dataset_preparation.videos_to_tfrecords --input_dir /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc/${VAL}/Drink \
+                                    --name arid_drink_${VAL} \
+                                    --file_pattern *.avi \
+                                    --output_dir /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc_tfrecords/arid_drink/ \
+                                    --action_label 0 \
+                                    --files_per_shard 100
+
+cp ./tcc/configs/arid_drink.yml ./tmp/arid_drink/config.yml
+
+VAL=train
+python -m tcc.dataset_preparation.videos_to_tfrecords --input_dir /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc/${VAL}/Sit \
+                                    --name arid_sit_${VAL} \
+                                    --file_pattern *.avi \
+                                    --output_dir /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc_tfrecords/arid_sit/ \
+                                    --action_label 6 \
+                                    --files_per_shard 100
+
+CUDA_VISIBLE_DEVICES=0,1 python -m tcc.train --alsologtostderr --force_train --logdir ./tmp/arid_sit
+
+
+# Extracts embeddings of 4 videos in the val set.
+DATA=sit
+CUDA_VISIBLE_DEVICES=0,1 python -m tcc.extract_embeddings --alsologtostderr --logdir ./tmp/arid_${DATA}  --dataset arid_${DATA} --split valid --max_embs 4 --path_to_tfrecords /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc_tfrecords/%s_tfrecords --frames_per_batch 1 --keep_data --save_path /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc_tfrecords/arid_${DATA}_tfrecords/embeds.npy
+
+# Aligns videos using extracted embeddings.
+DATA=sit
+CUDA_VISIBLE_DEVICES=0,1 python -m tcc.visualize_alignment --alsologtostderr --video_path ./tmp/arid_${DATA}/aligned.gif  --embs_path /home/srinitca/vlr/project/ARID_Dataset_v1/Version_1/tcc_tfrecords/arid_${DATA}_tfrecords/embeds.npy --reference_video 0
+
+
+
+
+# Pouring Dataset examples
+# Extracts embeddings of 4 videos in the val set.
+CUDA_VISIBLE_DEVICES=2,3 python -m tcc.extract_embeddings --alsologtostderr --logdir /tmp/alignment_logs --dataset pouring --split val --max_embs 1 --keep_data
+# Aligns videos using extracted embeddings.
+python -m tcc.visualize_alignment --alsologtostderr --video_path /tmp/aligned.gif  --embs_path /tmp/embeddings.npy
+
+

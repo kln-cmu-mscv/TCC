@@ -49,7 +49,7 @@ flags.DEFINE_boolean('visualize', False, 'Visualize images. Switched off by '
                      'for default to speed traininig up and take less memory.')
 flags.DEFINE_boolean('keep_data', False, 'Keep frames of video with '
                      'embeddings.')
-flags.DEFINE_boolean('keep_labels', True, 'Keep per-frame labels with '
+flags.DEFINE_boolean('keep_labels',False, 'Keep per-frame labels with '
                      'embeddings.')
 flags.DEFINE_integer('sample_all_stride', 1, 'Stride between frames that will '
                      'be embedded.')

@@ -379,8 +379,13 @@ def create_one_epoch_dataset(dataset, split, mode, path_to_tfrecords):
   """Creates a dataset iterator that gives one epoch of dataset."""
   batch_size = 1
   sample_all_stride = CONFIG.DATA.SAMPLE_ALL_STRIDE
-  tfrecord_files = get_tfrecords(dataset, split, path_to_tfrecords)
 
+  print(f"dataset : {dataset}")
+  print(f"split : {split}")
+  print(f"path_to_tfrecords : {path_to_tfrecords}")
+  tfrecord_files = get_tfrecords(dataset, split, path_to_tfrecords)
+  print(f"tfrecord_files = {tfrecord_files}")
+  
   with tf.device('/cpu:0'):
     dataset = tf.data.TFRecordDataset(
         tfrecord_files,
